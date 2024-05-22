@@ -5378,7 +5378,6 @@ mod tests {
       )
       .await;
     let specifiers = graph.specifiers().collect::<HashMap<_, _>>();
-    dbg!(&specifiers);
     assert_eq!(specifiers.len(), 4);
     assert!(specifiers
       .get(&Url::parse("file:///foo.js").unwrap())

@@ -734,43 +734,34 @@ pub fn decode_source(
       "utf-8"
     }
   });
-  let r = decode_with_charset(bytes.clone(), charset);
-  if r.is_err() {
-    decode_with_charset(bytes, "utf-16")
-  } else {
-    r
-  }
+  decode_with_charset(bytes.clone(), charset)
 }
 
 fn decode_with_charset(
   bytes: Arc<[u8]>,
   charset: &str,
 ) -> Result<Arc<str>, std::io::Error> {
-  dbg!(21);
-  let text =
-    match dbg!(text_encoding::convert_to_utf8(bytes.as_ref(), charset))? {
-      Cow::Borrowed(text) => {
-        dbg!(211);
-
-        if text.starts_with(text_encoding::BOM_CHAR) {
-          text[text_encoding::BOM_CHAR.len_utf8()..].to_string()
-        } else {
-          return Ok(
-            // SAFETY: we know it's a valid utf-8 string at this point
-            unsafe {
-              let raw_ptr = Arc::into_raw(bytes);
-              Arc::from_raw(std::mem::transmute::<*const [u8], *const str>(
-                raw_ptr,
-              ))
-            },
-          );
-        }
+  let text = match text_encoding::convert_to_utf8(bytes.as_ref(), charset)? {
+    Cow::Borrowed(text) => {
+      if text.starts_with(text_encoding::BOM_CHAR) {
+        text[text_encoding::BOM_CHAR.len_utf8()..].to_string()
+      } else {
+        return Ok(
+          // SAFETY: we know it's a valid utf-8 string at this point
+          unsafe {
+            let raw_ptr = Arc::into_raw(bytes);
+            Arc::from_raw(std::mem::transmute::<*const [u8], *const str>(
+              raw_ptr,
+            ))
+          },
+        );
       }
-      Cow::Owned(mut text) => {
-        text_encoding::strip_bom_mut(&mut text);
-        text
-      }
-    };
+    }
+    Cow::Owned(mut text) => {
+      text_encoding::strip_bom_mut(&mut text);
+      text
+    }
+  };
   let text: Arc<str> = Arc::from(text);
   Ok(text)
 }
